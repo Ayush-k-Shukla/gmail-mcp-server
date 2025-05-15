@@ -4,6 +4,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { authenticateAndSaveCredentials } from './auth';
 import { getPostById, SINGLE_POST_TOOL } from './tools/jsonplaceholder';
 
 // Create an MCP server
@@ -65,4 +66,8 @@ async function main() {
   }
 }
 
-main();
+if (process.argv[2] === 'auth') {
+  authenticateAndSaveCredentials().catch(console.error);
+} else {
+  main().catch(console.error);
+}
