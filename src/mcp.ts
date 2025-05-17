@@ -5,8 +5,16 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { authenticateAndSaveCredentials, loadCredentials } from './auth';
-import { GET__GMAIL_PROFILE, getGmailProfileById } from './tools/gmail';
-import { getPostById, SINGLE_POST_TOOL } from './tools/jsonplaceholder';
+import {
+  GET__GMAIL_PROFILE_TOOL,
+  GET_UNREAD_EMAILS_TOOL,
+  getGmailProfileById,
+  getUnreadEmails,
+  SEND_EMAIL_TOOL,
+  sendEmail,
+  SUMMARIZE_TOP_K_EMAILS_TOOL,
+  summarizeTopKEmails,
+} from './tools/gmail';
 
 // Create an MCP server
 const server = new Server(
@@ -14,7 +22,12 @@ const server = new Server(
   { capabilities: { tools: {} } }
 );
 
-const ALL_TOOLS: any[] = [SINGLE_POST_TOOL, GET__GMAIL_PROFILE];
+const ALL_TOOLS: any[] = [
+  GET__GMAIL_PROFILE_TOOL,
+  SEND_EMAIL_TOOL,
+  SUMMARIZE_TOP_K_EMAILS_TOOL,
+  GET_UNREAD_EMAILS_TOOL,
+];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   console.error('Received list tools');
@@ -27,16 +40,26 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
   try {
     switch (toolName) {
-      case SINGLE_POST_TOOL.name: {
-        const { postId } = req.params.arguments as { postId: string };
-        return await getPostById(postId);
-      }
-
-      case GET__GMAIL_PROFILE.name: {
+      case GET__GMAIL_PROFILE_TOOL.name: {
         const { userId } = req.params.arguments as { userId: string };
         return await getGmailProfileById(userId);
       }
-
+      case SEND_EMAIL_TOOL.name: {
+        const { to, subject, body } = req.params.arguments as {
+          to: string;
+          subject: string;
+          body: string;
+        };
+        return await sendEmail(to, subject, body);
+      }
+      case SUMMARIZE_TOP_K_EMAILS_TOOL.name: {
+        const { k } = req.params.arguments as { k: number };
+        return await summarizeTopKEmails(k);
+      }
+      case GET_UNREAD_EMAILS_TOOL.name: {
+        const { maxResults } = req.params.arguments as { maxResults?: number };
+        return await getUnreadEmails(maxResults);
+      }
       default:
         return {
           content: [

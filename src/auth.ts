@@ -10,7 +10,10 @@ const credentialsPath =
 export async function authenticateAndSaveCredentials() {
   console.log('Auth flow starting...');
   const localAuth = await authenticate({
-    scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
+    scopes: [
+      'https://www.googleapis.com/auth/gmail.readonly',
+      'https://www.googleapis.com/auth/gmail.send',
+    ],
     keyfilePath: 'gcp-oauth-keys.json',
   });
   fs.writeFileSync(credentialsPath, JSON.stringify(localAuth.credentials));
