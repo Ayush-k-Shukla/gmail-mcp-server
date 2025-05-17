@@ -142,3 +142,124 @@ export const getUnreadEmails = async (maxResults: number = 10) => {
     isError: false,
   };
 };
+
+export const GLOBAL_SEARCH_TOOL: Tool = {
+  name: 'contextual-search-emails',
+  description:
+    'Search emails by subject, sender/recipient, time range, keyword, and label.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      subject: {
+        type: 'string',
+        description: 'Subject to search for',
+        nullable: true,
+      },
+      sender: {
+        type: 'string',
+        description: 'Sender email address',
+        nullable: true,
+      },
+      recipient: {
+        type: 'string',
+        description: 'Recipient email address',
+        nullable: true,
+      },
+      after: {
+        type: 'string',
+        description: 'Start date (YYYY/MM/DD)',
+        nullable: true,
+      },
+      before: {
+        type: 'string',
+        description: 'End date (YYYY/MM/DD)',
+        nullable: true,
+      },
+      keyword: {
+        type: 'string',
+        description: 'Keyword in body/snippet',
+        nullable: true,
+      },
+      label: {
+        type: 'string',
+        description: 'Gmail label to filter by',
+        nullable: true,
+      },
+      maxResults: {
+        type: 'number',
+        description: 'Maximum results',
+        default: 10,
+      },
+    },
+    required: [],
+  },
+};
+
+export const globalSearchEmails = async (params: {
+  subject?: string;
+  sender?: string;
+  recipient?: string;
+  after?: string;
+  before?: string;
+  keyword?: string;
+  label?: string;
+  maxResults?: number;
+}) => {
+  let q = [];
+  if (params.subject) q.push(`subject:${params.subject}`);
+  if (params.sender) q.push(`from:${params.sender}`);
+  if (params.recipient) q.push(`to:${params.recipient}`);
+  if (params.after) q.push(`after:${params.after.replace(/-/g, '/')}`);
+  if (params.before) q.push(`before:${params.before.replace(/-/g, '/')}`);
+  if (params.keyword) q.push(params.keyword);
+  if (params.label) q.push(`label:${params.label}`);
+  const query = q.join(' ');
+  const res = await gmail.users.messages.list({
+    userId: 'me',
+    q: query,
+    maxResults: params.maxResults || 10,
+  });
+  const messages = res.data.messages || [];
+  let results: string[] = [];
+  for (const msg of messages) {
+    const msgRes = await gmail.users.messages.get({
+      userId: 'me',
+      id: msg.id!,
+    });
+    const snippet = msgRes.data.snippet || '';
+    results.push(snippet);
+  }
+  return {
+    content: [
+      {
+        type: 'text',
+        text: results.map((s, i) => `Result ${i + 1}: ${s}`).join('\n\n'),
+      },
+    ],
+    isError: false,
+  };
+};
+
+export const LIST_LABELS_TOOL: Tool = {
+  name: 'list-gmail-labels',
+  description: 'List all Gmail labels for the authenticated user.',
+  inputSchema: {
+    type: 'object',
+    properties: {},
+    required: [],
+  },
+};
+
+export const listGmailLabels = async () => {
+  const res = await gmail.users.labels.list({ userId: 'me' });
+  const labels = res.data.labels?.map((l) => `${l.name} (${l.id})`) || [];
+  return {
+    content: [
+      {
+        type: 'text',
+        text: labels.length ? labels.join('\n') : 'No labels found.',
+      },
+    ],
+    isError: false,
+  };
+};

@@ -10,6 +10,10 @@ import {
   GET_UNREAD_EMAILS_TOOL,
   getGmailProfileById,
   getUnreadEmails,
+  GLOBAL_SEARCH_TOOL,
+  globalSearchEmails,
+  LIST_LABELS_TOOL,
+  listGmailLabels,
   SEND_EMAIL_TOOL,
   sendEmail,
   SUMMARIZE_TOP_K_EMAILS_TOOL,
@@ -27,6 +31,8 @@ const ALL_TOOLS: any[] = [
   SEND_EMAIL_TOOL,
   SUMMARIZE_TOP_K_EMAILS_TOOL,
   GET_UNREAD_EMAILS_TOOL,
+  GLOBAL_SEARCH_TOOL,
+  LIST_LABELS_TOOL,
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -59,6 +65,12 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       case GET_UNREAD_EMAILS_TOOL.name: {
         const { maxResults } = req.params.arguments as { maxResults?: number };
         return await getUnreadEmails(maxResults);
+      }
+      case GLOBAL_SEARCH_TOOL.name: {
+        return await globalSearchEmails(req.params.arguments as any);
+      }
+      case LIST_LABELS_TOOL.name: {
+        return await listGmailLabels();
       }
       default:
         return {
