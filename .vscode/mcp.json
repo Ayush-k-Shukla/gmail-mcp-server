@@ -3,7 +3,10 @@
     "my-mcp-server": {
       "type": "stdio",
       "command": "node",
-      "args": ["D:\\personal\\learning\\projects\\mcp\\dist\\mcp.js"]
+      "args": ["D:\\personal\\learning\\projects\\mcp\\dist\\mcp.js"],
+      "env": {
+        "GMAIL_CREDENTIALS_PATH": "D:\\personal\\learning\\projects\\mcp\\gmail-server-credentials.json"
+      }
     }
   }
 }

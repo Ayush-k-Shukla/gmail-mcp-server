@@ -4,7 +4,8 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { authenticateAndSaveCredentials } from './auth';
+import { authenticateAndSaveCredentials, loadCredentials } from './auth';
+import { GET__GMAIL_PROFILE, getGmailProfileById } from './tools/gmail';
 import { getPostById, SINGLE_POST_TOOL } from './tools/jsonplaceholder';
 
 // Create an MCP server
@@ -13,7 +14,7 @@ const server = new Server(
   { capabilities: { tools: {} } }
 );
 
-const ALL_TOOLS: any[] = [SINGLE_POST_TOOL];
+const ALL_TOOLS: any[] = [SINGLE_POST_TOOL, GET__GMAIL_PROFILE];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   console.error('Received list tools');
@@ -30,6 +31,12 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         const { postId } = req.params.arguments as { postId: string };
         return await getPostById(postId);
       }
+
+      case GET__GMAIL_PROFILE.name: {
+        const { userId } = req.params.arguments as { userId: string };
+        return await getGmailProfileById(userId);
+      }
+
       default:
         return {
           content: [
@@ -58,6 +65,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
 async function main() {
   try {
+    await loadCredentials();
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error('server connected success');
