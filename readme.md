@@ -8,11 +8,24 @@ This MCP server integrates with gmail apis to allow listing, send of emails.
 
   - `userId`: The user Gmail ID (string, required)
 
-- **send-email**: Send an email to a given email address
+- **send-email**: Send an email to a given email address (supports attachments and HTML)
 
   - `to`: Recipient email address (string, required)
   - `subject`: Email subject (string, required)
   - `body`: Email body (string, required)
+  - `isHtml`: Send as HTML email (boolean, optional, default: false)
+  - `attachments`: Array of attachments (base64 encoded, optional)
+    - `filename`: Attachment filename (string, required)
+    - `mimeType`: MIME type (string, required)
+    - `content`: Base64 encoded content (string, required)
+
+- **create-label**: Create a new Gmail label
+
+  - `name`: Label name (string, required)
+
+- **delete-email**: Delete an email by message ID
+
+  - `messageId`: ID of the email message (string, required)
 
 - **summarize-top-k-emails**: Summarize the top k emails in the inbox
 
@@ -43,11 +56,9 @@ This MCP server integrates with gmail apis to allow listing, send of emails.
 3. [Configure an OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent)
    1. If have workspace account then make it private
    2. Otherwise set some test users (emails against which want to test) to test before app is verified.
-4. Add OAuth scope based on need
-   1. Refer [this](https://developers.google.com/workspace/gmail/api/auth/scopes) for more
-5. [Create an OAuth Client ID](https://console.cloud.google.com/apis/credentials/oauthclient) for application type "Web App"
-6. Download the JSON file of your client's OAuth keys
-7. Rename the key file to `gcp-oauth-keys.json` and place into the root of the repo.
+4. [Create an OAuth Client ID](https://console.cloud.google.com/apis/credentials/oauthclient) for application type "Web App"
+5. Download the JSON file of your client's OAuth keys
+6. Rename the key file to `gcp-oauth-keys.json` and place into the root of the repo.
 
 Make sure to build the server with `npm run build`
 
@@ -57,5 +68,6 @@ To authenticate and save credentials:
 
 1. Run the server with the `auth` argument: `node dist/mcp.js auth`
 2. This will open an authentication flow in your system browser
+   - Note down the token generated is only valid for `1 hr` so relogin if get any error like `Error: No refresh token is set.`.
 3. Complete the authentication process
 4. Credentials will be saved in the root of this repo with file name `gmail-server-credentials.json`

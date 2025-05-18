@@ -30,37 +30,145 @@ export const getGmailProfileById = async (userId: string) => {
 
 export const SEND_EMAIL_TOOL: Tool = {
   name: 'send-email',
-  description: 'Send an email to a given email address',
+  description:
+    'Send an email to a given email address (supports attachments and HTML)',
   inputSchema: {
     type: 'object',
     properties: {
       to: { type: 'string', description: 'Recipient email address' },
       subject: { type: 'string', description: 'Email subject' },
       body: { type: 'string', description: 'Email body' },
+      isHtml: {
+        type: 'boolean',
+        description: 'Send as HTML email',
+        default: false,
+      },
+      attachments: {
+        type: 'array',
+        description: 'Array of attachments (base64 encoded)',
+        items: {
+          type: 'object',
+          properties: {
+            filename: { type: 'string', description: 'Attachment filename' },
+            mimeType: { type: 'string', description: 'MIME type' },
+            content: { type: 'string', description: 'Base64 encoded content' },
+          },
+          required: ['filename', 'mimeType', 'content'],
+        },
+        nullable: true,
+      },
     },
     required: ['to', 'subject', 'body'],
   },
 };
 
-export const sendEmail = async (to: string, subject: string, body: string) => {
-  const message = [
+export const sendEmail = async (
+  to: string,
+  subject: string,
+  body: string,
+  isHtml: boolean = false,
+  attachments?: Array<{ filename: string; mimeType: string; content: string }>
+) => {
+  let messageParts = [
     `To: ${to}`,
-    'Content-Type: text/plain; charset=utf-8',
     `Subject: ${subject}`,
+    isHtml
+      ? 'Content-Type: text/html; charset=utf-8'
+      : 'Content-Type: text/plain; charset=utf-8',
     '',
     body,
-  ].join('\n');
-  const encodedMessage = Buffer.from(message)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  ];
+  let raw;
+  if (attachments && attachments.length > 0) {
+    const boundary = 'boundary_' + Date.now();
+    let multipartBody = [
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      'MIME-Version: 1.0',
+      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      '',
+      `--${boundary}`,
+      `Content-Type: ${isHtml ? 'text/html' : 'text/plain'}; charset="UTF-8"`,
+      'Content-Transfer-Encoding: 7bit',
+      '',
+      body,
+    ];
+    for (const att of attachments) {
+      multipartBody.push(
+        `--${boundary}`,
+        `Content-Type: ${att.mimeType}; name="${att.filename}"`,
+        'Content-Transfer-Encoding: base64',
+        `Content-Disposition: attachment; filename="${att.filename}"`,
+        '',
+        att.content,
+        ''
+      );
+    }
+    multipartBody.push(`--${boundary}--`);
+    raw = Buffer.from(multipartBody.join('\r\n'))
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  } else {
+    raw = Buffer.from(messageParts.join('\n'))
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  }
   await gmail.users.messages.send({
     userId: 'me',
-    requestBody: { raw: encodedMessage },
+    requestBody: { raw },
   });
   return {
     content: [{ type: 'text', text: 'Email sent successfully.' }],
+    isError: false,
+  };
+};
+
+export const CREATE_LABEL_TOOL: Tool = {
+  name: 'create-label',
+  description: 'Create a new Gmail label',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'Label name' },
+    },
+    required: ['name'],
+  },
+};
+
+export const createLabel = async (name: string) => {
+  const res = await gmail.users.labels.create({
+    userId: 'me',
+    requestBody: { name },
+  });
+  return {
+    content: [{ type: 'text', text: `Label created: ${res.data.id}` }],
+    isError: false,
+  };
+};
+
+export const DELETE_EMAIL_TOOL: Tool = {
+  name: 'delete-email',
+  description: 'Delete an email by message ID',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      messageId: { type: 'string', description: 'ID of the email message' },
+    },
+    required: ['messageId'],
+  },
+};
+
+export const deleteEmail = async (messageId: string) => {
+  await gmail.users.messages.delete({
+    userId: 'me',
+    id: messageId,
+  });
+  return {
+    content: [{ type: 'text', text: 'Email deleted successfully.' }],
     isError: false,
   };
 };
@@ -80,20 +188,20 @@ export const SUMMARIZE_TOP_K_EMAILS_TOOL: Tool = {
 export const summarizeTopKEmails = async (k: number) => {
   const res = await gmail.users.messages.list({ userId: 'me', maxResults: k });
   const messages = res.data.messages || [];
-  let summaries: string[] = [];
+  let summaries: any[] = [];
   for (const msg of messages) {
     const msgRes = await gmail.users.messages.get({
       userId: 'me',
       id: msg.id!,
     });
-    const snippet = msgRes.data.snippet || '';
+    const snippet = msgRes.data || '';
     summaries.push(snippet);
   }
   return {
     content: [
       {
         type: 'text',
-        text: summaries.map((s, i) => `Email ${i + 1}: ${s}`).join('\n\n'),
+        text: JSON.stringify(summaries),
       },
     ],
     isError: false,
@@ -123,20 +231,20 @@ export const getUnreadEmails = async (maxResults: number = 10) => {
     maxResults,
   });
   const messages = res.data.messages || [];
-  let unread: string[] = [];
+  let unread: any[] = [];
   for (const msg of messages) {
     const msgRes = await gmail.users.messages.get({
       userId: 'me',
       id: msg.id!,
     });
-    const snippet = msgRes.data.snippet || '';
+    const snippet = msgRes.data || {};
     unread.push(snippet);
   }
   return {
     content: [
       {
         type: 'text',
-        text: unread.map((s, i) => `Unread Email ${i + 1}: ${s}`).join('\n\n'),
+        text: JSON.stringify(unread),
       },
     ],
     isError: false,
@@ -220,20 +328,20 @@ export const globalSearchEmails = async (params: {
     maxResults: params.maxResults || 10,
   });
   const messages = res.data.messages || [];
-  let results: string[] = [];
+  let results: any[] = [];
   for (const msg of messages) {
     const msgRes = await gmail.users.messages.get({
       userId: 'me',
       id: msg.id!,
     });
-    const snippet = msgRes.data.snippet || '';
+    const snippet = msgRes.data || '';
     results.push(snippet);
   }
   return {
     content: [
       {
         type: 'text',
-        text: results.map((s, i) => `Result ${i + 1}: ${s}`).join('\n\n'),
+        text: JSON.stringify(results),
       },
     ],
     isError: false,

@@ -6,6 +6,10 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { authenticateAndSaveCredentials, loadCredentials } from './auth';
 import {
+  CREATE_LABEL_TOOL,
+  createLabel,
+  DELETE_EMAIL_TOOL,
+  deleteEmail,
   GET__GMAIL_PROFILE_TOOL,
   GET_UNREAD_EMAILS_TOOL,
   getGmailProfileById,
@@ -33,6 +37,8 @@ const ALL_TOOLS: any[] = [
   GET_UNREAD_EMAILS_TOOL,
   GLOBAL_SEARCH_TOOL,
   LIST_LABELS_TOOL,
+  CREATE_LABEL_TOOL,
+  DELETE_EMAIL_TOOL,
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -51,12 +57,27 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         return await getGmailProfileById(userId);
       }
       case SEND_EMAIL_TOOL.name: {
-        const { to, subject, body } = req.params.arguments as {
+        const { to, subject, body, isHtml, attachments } = req.params
+          .arguments as {
           to: string;
           subject: string;
           body: string;
+          isHtml?: boolean;
+          attachments?: Array<{
+            filename: string;
+            mimeType: string;
+            content: string;
+          }>;
         };
-        return await sendEmail(to, subject, body);
+        return await sendEmail(to, subject, body, isHtml, attachments);
+      }
+      case CREATE_LABEL_TOOL.name: {
+        const { name } = req.params.arguments as { name: string };
+        return await createLabel(name);
+      }
+      case DELETE_EMAIL_TOOL.name: {
+        const { messageId } = req.params.arguments as { messageId: string };
+        return await deleteEmail(messageId);
       }
       case SUMMARIZE_TOP_K_EMAILS_TOOL.name: {
         const { k } = req.params.arguments as { k: number };
