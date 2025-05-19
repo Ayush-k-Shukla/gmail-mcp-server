@@ -3,15 +3,16 @@ import fs from 'fs';
 import { google } from 'googleapis';
 import path from 'path';
 
-const credentialsPath =
-  process.env.GMAIL_CREDENTIALS_PATH ||
-  path.join('./gmail-server-credentials.json');
+const credentialsPath = path.join(
+  __dirname,
+  '../gmail-server-credentials.json'
+);
 
 export async function authenticateAndSaveCredentials() {
   console.log('Auth flow starting...');
   const localAuth = await authenticate({
     scopes: ['https://mail.google.com/'], // this gives full access over gmail account
-    keyfilePath: 'gcp-oauth-keys.json',
+    keyfilePath: process.env.GMAIL_OAUTH_PATH ?? 'gcp-oauth-keys.json',
   });
   fs.writeFileSync(credentialsPath, JSON.stringify(localAuth.credentials));
 }

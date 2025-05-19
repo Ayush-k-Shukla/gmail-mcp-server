@@ -2,6 +2,31 @@
 
 This MCP server integrates with gmail apis to allow listing, send of emails.
 
+## Getting started
+
+### Setup Google cloud project
+
+- [Create a Google Cloud project](https://console.cloud.google.com/projectcreate)
+- [Enable the Gmail API](https://console.cloud.google.com/workspace-api/products)
+- [Configure an OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent)
+- If have workspace account then make it private
+- Otherwise set some test users (emails against which want to test) to test before app is verified.
+- [Create an OAuth Client ID](https://console.cloud.google.com/apis/credentials/oauthclient) for application type "Web App"
+- Download the JSON file of your client's OAuth keys
+- Rename the key file to `gcp-oauth-keys.json` and place into the root of the repo.
+
+## How to Run
+
+1. **Build the project:**
+   - Run `npm run build` from the root repo directory.
+2. **Authenticate:**
+   - Run `node dist/mcp.js auth`.
+   - This will open an authentication flow in your system browser
+   - Note down the token generated is only valid for `1 hr` so relogin if get any error like `Error: No refresh token is set.`.
+   - Credentials will be saved in the root of this repo with file name `gmail-server-credentials.json`
+3. **Use as MCP server:**
+   - Define the following in your VS Code MCP config (see below for details).
+
 ## Tools
 
 - **get-gmail-profile**: Get Gmail profile details based on userId
@@ -49,25 +74,44 @@ This MCP server integrates with gmail apis to allow listing, send of emails.
 - **list-gmail-labels**: List all Gmail labels for the authenticated user
   - No parameters required
 
-## Getting started
+## MCP Server Configuration Examples
 
-1. [Create a Google Cloud project](https://console.cloud.google.com/projectcreate)
-2. [Enable the Gmail API](https://console.cloud.google.com/workspace-api/products)
-3. [Configure an OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent)
-   1. If have workspace account then make it private
-   2. Otherwise set some test users (emails against which want to test) to test before app is verified.
-4. [Create an OAuth Client ID](https://console.cloud.google.com/apis/credentials/oauthclient) for application type "Web App"
-5. Download the JSON file of your client's OAuth keys
-6. Rename the key file to `gcp-oauth-keys.json` and place into the root of the repo.
+### VS Code `settings.json`
 
-Make sure to build the server with `npm run build`
+To use this server in VS Code, add the following to your `settings.json`:
 
-### Authentication
+```json
+{
+  "mcpServers": {
+    "gmail-mcp-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["<absolute path to dist/mcp.js>"],
+      "env": {
+        "GMAIL_OAUTH_PATH": "<absolute path to gmail-server-credentials.json>"
+      }
+    }
+  }
+}
+```
 
-To authenticate and save credentials:
+### Claude Desktop `claude_desktop_config.json`
 
-1. Run the server with the `auth` argument: `node dist/mcp.js auth`
-2. This will open an authentication flow in your system browser
-   - Note down the token generated is only valid for `1 hr` so relogin if get any error like `Error: No refresh token is set.`.
-3. Complete the authentication process
-4. Credentials will be saved in the root of this repo with file name `gmail-server-credentials.json`
+To use this server in Claude Desktop, add the following to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "gmail-mcp-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["<absolute path to dist/mcp.js>"],
+      "env": {
+        "GMAIL_OAUTH_PATH": "<absolute path to gmail-server-credentials.json>"
+      }
+    }
+  }
+}
+```
+
+Replace the placeholders (`<absolute path ...>`) with the actual full paths on your system for clarity and reliability.

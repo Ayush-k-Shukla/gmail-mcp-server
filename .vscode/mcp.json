@@ -1,11 +1,11 @@
 {
   "servers": {
-    "my-mcp-server": {
+    "gmail-mcp-server": {
       "type": "stdio",
       "command": "node",
       "args": ["D:\\personal\\learning\\projects\\mcp\\dist\\mcp.js"],
       "env": {
-        "GMAIL_CREDENTIALS_PATH": "D:\\personal\\learning\\projects\\mcp\\gmail-server-credentials.json"
+        "GMAIL_OAUTH_PATH": "D:\\personal\\learning\\projects\\mcp\\gcp-oauth-keys.json"
       }
     }
   }
