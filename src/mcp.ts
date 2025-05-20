@@ -9,8 +9,10 @@ import {
   CREATE_LABEL_TOOL,
   createLabel,
   DELETE_EMAIL_TOOL,
+  DELETE_LABELS_TOOL,
   deleteEmail,
-  GET__GMAIL_PROFILE_TOOL,
+  deleteGmailLabel,
+  GET_GMAIL_PROFILE_TOOL,
   GET_UNREAD_EMAILS_TOOL,
   getGmailProfileById,
   getUnreadEmails,
@@ -31,7 +33,7 @@ const server = new Server(
 );
 
 const ALL_TOOLS: any[] = [
-  GET__GMAIL_PROFILE_TOOL,
+  GET_GMAIL_PROFILE_TOOL,
   SEND_EMAIL_TOOL,
   SUMMARIZE_TOP_K_EMAILS_TOOL,
   GET_UNREAD_EMAILS_TOOL,
@@ -39,6 +41,7 @@ const ALL_TOOLS: any[] = [
   LIST_LABELS_TOOL,
   CREATE_LABEL_TOOL,
   DELETE_EMAIL_TOOL,
+  DELETE_LABELS_TOOL,
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -52,7 +55,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
   try {
     switch (toolName) {
-      case GET__GMAIL_PROFILE_TOOL.name: {
+      case GET_GMAIL_PROFILE_TOOL.name: {
         const { userId } = req.params.arguments as { userId: string };
         return await getGmailProfileById(userId);
       }
@@ -92,6 +95,10 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       }
       case LIST_LABELS_TOOL.name: {
         return await listGmailLabels();
+      }
+      case DELETE_LABELS_TOOL.name: {
+        const { labelId } = req.params.arguments as { labelId: string };
+        return await deleteGmailLabel(labelId);
       }
       default:
         return {

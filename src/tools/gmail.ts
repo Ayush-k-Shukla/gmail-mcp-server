@@ -3,7 +3,7 @@ import { google } from 'googleapis';
 
 const gmail = google.gmail('v1');
 
-export const GET__GMAIL_PROFILE_TOOL: Tool = {
+export const GET_GMAIL_PROFILE_TOOL: Tool = {
   name: 'get-gmail-profile',
   description: 'Get gmail profile details based on userId',
   inputSchema: {
@@ -127,29 +127,6 @@ export const sendEmail = async (
   };
 };
 
-export const CREATE_LABEL_TOOL: Tool = {
-  name: 'create-label',
-  description: 'Create a new Gmail label',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      name: { type: 'string', description: 'Label name' },
-    },
-    required: ['name'],
-  },
-};
-
-export const createLabel = async (name: string) => {
-  const res = await gmail.users.labels.create({
-    userId: 'me',
-    requestBody: { name },
-  });
-  return {
-    content: [{ type: 'text', text: `Label created: ${res.data.id}` }],
-    isError: false,
-  };
-};
-
 export const DELETE_EMAIL_TOOL: Tool = {
   name: 'delete-email',
   description: 'Delete an email by message ID',
@@ -252,7 +229,7 @@ export const getUnreadEmails = async (maxResults: number = 10) => {
 };
 
 export const GLOBAL_SEARCH_TOOL: Tool = {
-  name: 'contextual-search-emails',
+  name: 'global-search-emails',
   description:
     'Search emails by subject, sender/recipient, time range, keyword, and label.',
   inputSchema: {
@@ -360,12 +337,60 @@ export const LIST_LABELS_TOOL: Tool = {
 
 export const listGmailLabels = async () => {
   const res = await gmail.users.labels.list({ userId: 'me' });
-  const labels = res.data.labels?.map((l) => `${l.name} (${l.id})`) || [];
+  const labels = res.data.labels || [];
   return {
     content: [
       {
         type: 'text',
-        text: labels.length ? labels.join('\n') : 'No labels found.',
+        text: labels.length ? JSON.stringify(labels) : 'No labels found.',
+      },
+    ],
+    isError: false,
+  };
+};
+
+export const CREATE_LABEL_TOOL: Tool = {
+  name: 'create-label',
+  description: 'Create a new Gmail label',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'Label name' },
+    },
+    required: ['name'],
+  },
+};
+
+export const createLabel = async (name: string) => {
+  const res = await gmail.users.labels.create({
+    userId: 'me',
+    requestBody: { name },
+  });
+  return {
+    content: [{ type: 'text', text: `Label created: ${res.data.id}` }],
+    isError: false,
+  };
+};
+
+export const DELETE_LABELS_TOOL: Tool = {
+  name: 'delete-gmail-label',
+  description: 'Delete a gmail label.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      labelId: { type: 'string', description: 'Label name' },
+    },
+    required: [],
+  },
+};
+
+export const deleteGmailLabel = async (labelId: string) => {
+  const res = await gmail.users.labels.delete({ userId: 'me', id: labelId });
+  return {
+    content: [
+      {
+        type: 'text',
+        text: 'Label deleted successfully.',
       },
     ],
     isError: false,

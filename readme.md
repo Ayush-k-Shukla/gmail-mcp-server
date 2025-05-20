@@ -20,12 +20,52 @@ This MCP server integrates with gmail apis to allow listing, send of emails.
 1. **Build the project:**
    - Run `npm run build` from the root repo directory.
 2. **Authenticate:**
-   - Run `node dist/mcp.js auth`.
+   - Run `node dist/mcp.js auth`
    - This will open an authentication flow in your system browser
-   - Note down the token generated is only valid for `1 hr` so relogin if get any error like `Error: No refresh token is set.`.
+   - Note down the token generated is only valid for `1 hr` so relogin if get any error like `Error: No refresh token is set.`
    - Credentials will be saved in the root of this repo with file name `gmail-server-credentials.json`
-3. **Use as MCP server:**
-   - Define the following in your VS Code MCP config (see below for details).
+
+## MCP Server Configuration Examples
+
+### VS Code `settings.json`
+
+To use this server in VS Code, add the following to your `settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "gmail-mcp-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["<absolute path to dist/mcp.js>"],
+      "env": {
+        "GMAIL_OAUTH_PATH": "<absolute path to gmail-server-credentials.json>"
+      }
+    }
+  }
+}
+```
+
+### Claude Desktop `claude_desktop_config.json`
+
+To use this server in Claude Desktop, add the following to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "gmail-mcp-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["<absolute path to dist/mcp.js>"],
+      "env": {
+        "GMAIL_OAUTH_PATH": "<absolute path to gmail-server-credentials.json>"
+      }
+    }
+  }
+}
+```
+
+Replace the placeholders (`<absolute path ...>`) with the actual full paths on your system for clarity and reliability.
 
 ## Tools
 
@@ -72,46 +112,9 @@ This MCP server integrates with gmail apis to allow listing, send of emails.
   - `maxResults`: Maximum results (number, optional, default: 10)
 
 - **list-gmail-labels**: List all Gmail labels for the authenticated user
+
   - No parameters required
 
-## MCP Server Configuration Examples
+- **delete-gmail-label**: Delete an gmail label by label ID
 
-### VS Code `settings.json`
-
-To use this server in VS Code, add the following to your `settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "gmail-mcp-server": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["<absolute path to dist/mcp.js>"],
-      "env": {
-        "GMAIL_OAUTH_PATH": "<absolute path to gmail-server-credentials.json>"
-      }
-    }
-  }
-}
-```
-
-### Claude Desktop `claude_desktop_config.json`
-
-To use this server in Claude Desktop, add the following to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "gmail-mcp-server": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["<absolute path to dist/mcp.js>"],
-      "env": {
-        "GMAIL_OAUTH_PATH": "<absolute path to gmail-server-credentials.json>"
-      }
-    }
-  }
-}
-```
-
-Replace the placeholders (`<absolute path ...>`) with the actual full paths on your system for clarity and reliability.
+  - `labelId`: ID of the label (string, required)

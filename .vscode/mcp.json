@@ -3,9 +3,11 @@
     "gmail-mcp-server": {
       "type": "stdio",
       "command": "node",
-      "args": ["D:\\personal\\learning\\projects\\mcp\\dist\\mcp.js"],
+      "args": [
+        "D:\\personal\\learning\\projects\\gmail-mcp-server\\dist\\mcp.js"
+      ], // replace with absolute path in your directory
       "env": {
-        "GMAIL_OAUTH_PATH": "D:\\personal\\learning\\projects\\mcp\\gcp-oauth-keys.json"
+        "GMAIL_OAUTH_PATH": "D:\\personal\\learning\\projects\\gmail-mcp-server\\gcp-oauth-keys.json" // replace with absolute path in your directory
       }
     }
   }
