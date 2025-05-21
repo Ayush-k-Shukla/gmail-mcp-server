@@ -1,6 +1,6 @@
-# Gmail MCP server (In Progress)
+# Gmail MCP server
 
-This MCP server integrates with gmail apis to allow listing, send of emails.
+This MCP server integrates with Gmail APIs to list, delete, summarize, and send emails and labels.
 
 ## Getting started
 
@@ -100,7 +100,7 @@ Replace the placeholders (`<absolute path ...>`) with the actual full paths on y
 
   - `maxResults`: Maximum number of unread emails to fetch (number, optional, default: 10)
 
-- **contextual-search-emails**: Search emails by subject, sender/recipient, time range, keyword, and label
+- **global-search-emails**: Search emails by subject, sender/recipient, time range, keyword, and label
 
   - `subject`: Subject to search for (string, optional)
   - `sender`: Sender email address (string, optional)
