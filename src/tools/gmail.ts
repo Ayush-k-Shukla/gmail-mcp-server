@@ -1,5 +1,6 @@
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
-import { google } from 'googleapis';
+import { gmail_v1, google } from 'googleapis';
+import { normalizeGmailMessage } from '../utils/format';
 
 const gmail = google.gmail('v1');
 
@@ -172,7 +173,7 @@ export const summarizeTopKEmails = async (k: number) => {
       id: msg.id!,
     });
     const snippet = msgRes.data || '';
-    summaries.push(snippet);
+    summaries.push(normalizeGmailMessage(snippet));
   }
   return {
     content: [
@@ -214,8 +215,8 @@ export const getUnreadEmails = async (maxResults: number = 10) => {
       userId: 'me',
       id: msg.id!,
     });
-    const snippet = msgRes.data || {};
-    unread.push(snippet);
+    const snippet: gmail_v1.Schema$Message = msgRes.data || {};
+    unread.push(normalizeGmailMessage(snippet));
   }
   return {
     content: [
@@ -312,7 +313,7 @@ export const globalSearchEmails = async (params: {
       id: msg.id!,
     });
     const snippet = msgRes.data || '';
-    results.push(snippet);
+    results.push(normalizeGmailMessage(snippet));
   }
   return {
     content: [

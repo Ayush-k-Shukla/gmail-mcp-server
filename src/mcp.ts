@@ -4,7 +4,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { authenticateAndSaveCredentials, loadCredentials } from './auth';
+import { authenticateAndSaveCredentials, loadCredentials } from './auth.js';
 import {
   CREATE_LABEL_TOOL,
   createLabel,
@@ -24,7 +24,12 @@ import {
   sendEmail,
   SUMMARIZE_TOP_K_EMAILS_TOOL,
   summarizeTopKEmails,
-} from './tools/gmail';
+} from './tools/gmail.js';
+import {
+  VECTOR_SEARCH_EMAILS_TOOL,
+  vectorSearchEmailsHandler,
+} from './tools/vector-search.js';
+import { indexEmails } from './utils/vector-db.js';
 
 // Create an MCP server
 const server = new Server(
@@ -42,6 +47,7 @@ const ALL_TOOLS: any[] = [
   CREATE_LABEL_TOOL,
   DELETE_EMAIL_TOOL,
   DELETE_LABELS_TOOL,
+  VECTOR_SEARCH_EMAILS_TOOL,
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -88,10 +94,28 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       }
       case GET_UNREAD_EMAILS_TOOL.name: {
         const { maxResults } = req.params.arguments as { maxResults?: number };
-        return await getUnreadEmails(maxResults);
+        const unreadResult = await getUnreadEmails(maxResults);
+
+        try {
+          const emails = JSON.parse(unreadResult.content[0].text);
+          await indexEmails(emails);
+          console.error(`Indexing complete for ${emails?.length} emails`);
+        } catch (e) {
+          console.error('Failed to index unread emails:', e);
+        }
+
+        return unreadResult;
       }
       case GLOBAL_SEARCH_TOOL.name: {
-        return await globalSearchEmails(req.params.arguments as any);
+        const result = await globalSearchEmails(req.params.arguments as any);
+        try {
+          const emails = JSON.parse(result.content[0].text);
+          await indexEmails(emails);
+          console.error(`Indexing complete for ${emails?.length} emails`);
+        } catch (e) {
+          console.error('Failed to index search result emails:', e);
+        }
+        return result;
       }
       case LIST_LABELS_TOOL.name: {
         return await listGmailLabels();
@@ -99,6 +123,13 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       case DELETE_LABELS_TOOL.name: {
         const { labelId } = req.params.arguments as { labelId: string };
         return await deleteGmailLabel(labelId);
+      }
+      case VECTOR_SEARCH_EMAILS_TOOL.name: {
+        const { query, k } = req.params.arguments as {
+          query: string;
+          k?: number;
+        };
+        return await vectorSearchEmailsHandler(query, k);
       }
       default:
         return {
