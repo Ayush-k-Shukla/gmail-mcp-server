@@ -10,7 +10,6 @@ let embedder: any = null;
 export const getEmbedder = async () => {
   if (!embedder) {
     const { pipeline } = await import('@xenova/transformers');
-    console.log('Loading embedding pipeline...');
 
     // The feature-extraction pipeline is used to convert text into vector embeddings.
     embedder = await pipeline('feature-extraction');
@@ -33,7 +32,6 @@ export const getCollection = async () => {
 };
 
 export const indexEmails = async (emails: IReadableGmailFormat[]) => {
-  const embedder = await getEmbedder();
   const collection = await getCollection();
 
   for (const email of emails) {
@@ -88,4 +86,8 @@ const getEmbedingFromText = async (text: string) => {
   } catch (err) {
     throw err;
   }
+};
+
+export const isRagEnabled = () => {
+  return process.env.ENABLE_RAG === 'true';
 };

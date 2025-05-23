@@ -7,7 +7,8 @@
         "D:\\personal\\learning\\projects\\gmail-mcp-server\\dist\\mcp.js"
       ], // replace with absolute path in your directory
       "env": {
-        "GMAIL_OAUTH_PATH": "D:\\personal\\learning\\projects\\gmail-mcp-server\\gcp-oauth-keys.json" // replace with absolute path in your directory
+        "GMAIL_OAUTH_PATH": "D:\\personal\\learning\\projects\\gmail-mcp-server\\gcp-oauth-keys.json", // replace with absolute path in your directory,
+        "ENABLE_RAG": "false"
       }
     }
   }

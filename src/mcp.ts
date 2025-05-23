@@ -29,13 +29,15 @@ import {
   VECTOR_SEARCH_EMAILS_TOOL,
   vectorSearchEmailsHandler,
 } from './tools/vector-search.js';
-import { indexEmails } from './utils/vector-db.js';
+import { indexEmails, isRagEnabled } from './utils/vector-db.js';
 
 // Create an MCP server
 const server = new Server(
   { name: 'my-mcp', version: '1.0.0' },
   { capabilities: { tools: {} } }
 );
+
+const RAG_TOOLS: any[] = isRagEnabled() ? [VECTOR_SEARCH_EMAILS_TOOL] : [];
 
 const ALL_TOOLS: any[] = [
   GET_GMAIL_PROFILE_TOOL,
@@ -47,7 +49,7 @@ const ALL_TOOLS: any[] = [
   CREATE_LABEL_TOOL,
   DELETE_EMAIL_TOOL,
   DELETE_LABELS_TOOL,
-  VECTOR_SEARCH_EMAILS_TOOL,
+  ...RAG_TOOLS,
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -96,25 +98,21 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         const { maxResults } = req.params.arguments as { maxResults?: number };
         const unreadResult = await getUnreadEmails(maxResults);
 
-        try {
+        if (isRagEnabled()) {
           const emails = JSON.parse(unreadResult.content[0].text);
           await indexEmails(emails);
-          console.error(`Indexing complete for ${emails?.length} emails`);
-        } catch (e) {
-          console.error('Failed to index unread emails:', e);
         }
 
         return unreadResult;
       }
       case GLOBAL_SEARCH_TOOL.name: {
         const result = await globalSearchEmails(req.params.arguments as any);
-        try {
+
+        if (isRagEnabled()) {
           const emails = JSON.parse(result.content[0].text);
           await indexEmails(emails);
-          console.error(`Indexing complete for ${emails?.length} emails`);
-        } catch (e) {
-          console.error('Failed to index search result emails:', e);
         }
+
         return result;
       }
       case LIST_LABELS_TOOL.name: {
