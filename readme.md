@@ -2,6 +2,11 @@
 
 This MCP server integrates with Gmail APIs to list, delete, summarize, and send emails and labels.
 
+## Prerequisites
+
+- **Node.js & npm:** Ensure you have Node.js (v18 or higher recommended) and npm installed. [Download Node.js](https://nodejs.org/)
+- **Docker (for RAG/Chroma DB):** If you want to use RAG features, install Docker: [Get Docker](https://docs.docker.com/get-docker/)
+
 ## Getting started
 
 ### Setup Google cloud project
@@ -14,6 +19,10 @@ This MCP server integrates with Gmail APIs to list, delete, summarize, and send 
 - [Create an OAuth Client ID](https://console.cloud.google.com/apis/credentials/oauthclient) for application type "Web App"
 - Download the JSON file of your client's OAuth keys
 - Rename the key file to `gcp-oauth-keys.json` and place into the root of the repo.
+
+### Install dependencies
+
+- Run `npm install` from the root directory to install all required dependencies.
 
 ## How to Run
 
@@ -39,7 +48,8 @@ To use this server in VS Code, add the following to your `settings.json`:
       "command": "node",
       "args": ["<absolute path to dist/mcp.js>"],
       "env": {
-        "GMAIL_OAUTH_PATH": "<absolute path to gmail-server-credentials.json>"
+        "GMAIL_OAUTH_PATH": "<absolute path to gmail-server-credentials.json>",
+        "ENABLE_RAG": "false" // mark as true if want to use rag
       }
     }
   }
@@ -58,7 +68,8 @@ To use this server in Claude Desktop, add the following to your `claude_desktop_
       "command": "node",
       "args": ["<absolute path to dist/mcp.js>"],
       "env": {
-        "GMAIL_OAUTH_PATH": "<absolute path to gmail-server-credentials.json>"
+        "GMAIL_OAUTH_PATH": "<absolute path to gmail-server-credentials.json>",
+        "ENABLE_RAG": "false" // mark as true if want to use rag
       }
     }
   }
@@ -66,6 +77,11 @@ To use this server in Claude Desktop, add the following to your `claude_desktop_
 ```
 
 Replace the placeholders (`<absolute path ...>`) with the actual full paths on your system for clarity and reliability.
+
+## Environment Variables
+
+- `GMAIL_OAUTH_PATH`: Absolute path to your Gmail OAuth credentials JSON file (e.g., `gmail-server-credentials.json`).
+- `ENABLE_RAG`: Set to `true` to enable Retrieval-Augmented Generation (RAG) features; otherwise, set to `false`.
 
 ## Tools
 
@@ -118,3 +134,61 @@ Replace the placeholders (`<absolute path ...>`) with the actual full paths on y
 - **delete-gmail-label**: Delete an gmail label by label ID
 
   - `labelId`: ID of the label (string, required)
+
+- **vector-search-emails**: Semantic search for emails using vector embeddings (RAG)
+
+  - `query`: The search query (string, required)
+  - `k`: Number of top results to return (number, optional, default: 10)
+
+## Running with Retrieval-Augmented Generation (RAG)
+
+To enable semantic search and RAG features:
+
+1. **Run Chroma DB locally**
+
+   - Start a local Chroma DB instance for embedding storage and retrieval. You can use Docker:
+     ```sh
+     docker run -v ./chroma-data:/data -p 8000:8000 chromadb/chroma
+     ```
+     - This command mounts a local directory (`./chroma-data`) to the container's `/data` directory, ensuring your Chroma DB data persists even if the container is stopped or removed.
+     - If you do not use the `-v` option, your data will be lost when the container is deleted.
+   - Or follow the [Chroma DB documentation](https://docs.trychroma.com/docs/overview/getting-started?lang=typescript) for other setup options.
+
+   - **Reference:**
+     - [Chroma DB Docker Quickstart](https://docs.trychroma.com/deployment/docker)
+     - [Chroma DB TypeScript Client](https://docs.trychroma.com/docs/overview/getting-started?lang=typescript)
+
+2. **Indexing emails for embeddings**
+
+   - Whenever you use any of the following tools:
+     - `global-search-emails`
+     - `summarize-top-k-emails`
+     - `get-unread-emails`
+   - The emails fetched will be automatically indexed and embedded into Chroma DB for future semantic search.
+
+3. **Performing vector search**
+   - Use the `vector-search-emails` tool to semantically search your indexed emails using natural language queries.
+
+**Note:**
+
+- Ensure Chroma DB is running before using RAG features.
+- Only emails fetched through the above tools are indexed for semantic search.
+- For best results, first fetch new emails to keep the index updated.
+
+## RAG Flow: Embedding, Indexing, and Searching Emails
+
+Below is a simplified Mermaid flowchart for how RAG is used to embed, index, and search emails:
+
+```mermaid
+flowchart TD
+    Fetch[Fetch emails from Gmail API] --> Embed[Generate embeddings using xenova]
+    Embed --> Index[Index embeddings in Chroma DB]
+    Index --> Searchable[Emails are now searchable semantically]
+    Query[User submits semantic search query] --> QEmbed[Generate embedding for query]
+    QEmbed --> QSearch[Query Chroma DB for similar emails]
+    QSearch --> Result[Return matching emails]
+```
+
+- **Embedding:** When you fetch emails, their content is converted into vector embeddings using Xenova.
+- **Indexing:** These embeddings are stored in Chroma DB for fast retrieval.
+- **Semantic Search:** When you use `vector-search-emails`, your query is embedded and compared to indexed emails to find the most relevant matches.
