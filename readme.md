@@ -181,14 +181,24 @@ Below is a simplified Mermaid flowchart for how RAG is used to embed, index, and
 
 ```mermaid
 flowchart TD
-    Fetch[Fetch emails from Gmail API] --> Embed[Generate embeddings using xenova]
-    Embed --> Index[Index embeddings in Chroma DB]
-    Index --> Searchable[Emails are now searchable semantically]
-    Query[User submits semantic search query] --> QEmbed[Generate embedding for query]
-    QEmbed --> QSearch[Query Chroma DB for similar emails]
-    QSearch --> Result[Return matching emails]
+    User[User] --> LLM["LLM (calls MCP tools)"]
+    LLM --> Query["User submits semantic<br/>search query<br/><b>(Triggered from LLM)</b>"]
+
+    %% Query Flow
+    Query --> CheckIndexed{"Emails already<br/>indexed?"}
+    CheckIndexed -- No --> Fetch["Fetch emails<br/>from Gmail API"]
+    Fetch --> Embed["Generate embeddings<br/>using xenova"]
+    Embed --> Index["Index embeddings<br/>in Chroma DB"]
+    Index --> Searchable["Emails are now<br/>searchable semantically"]
+    Searchable --> QEmbed["Generate embedding<br/>for query"]
+
+    CheckIndexed -- Yes --> QEmbed
+    QEmbed --> QSearch["Query Chroma DB<br/>for similar emails"]
+    QSearch --> Result["Return matching emails"]
+
 ```
 
-- **Embedding:** When you fetch emails, their content is converted into vector embeddings using Xenova.
+- **LLM Role:** The user interacts with the LLM, which interprets the query and calls the appropriate MCP server tools (such as semantic search or email fetch).
+- **Embedding:** When emails are fetched, their content is converted into vector embeddings using Xenova.
 - **Indexing:** These embeddings are stored in Chroma DB for fast retrieval.
-- **Semantic Search:** When you use `vector-search-emails`, your query is embedded and compared to indexed emails to find the most relevant matches.
+- **Semantic Search:** When the LLM uses `vector-search-emails`, the query is embedded and compared to indexed emails to find the most relevant matches.
